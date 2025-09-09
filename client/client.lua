@@ -28,7 +28,7 @@ local function nearbyPark(point)
                 local plate = GetVehicleNumberPlateText(cache.vehicle)
                 local class = GetVehicleClass(cache.vehicle)
                 local properties = lib.getVehicleProperties(cache.vehicle)
-                local cb, msg = lib.callback.await('uniq_garage:cb:CanStore', 1000, point.garage, plate, class, properties)
+                local cb, msg = lib.callback.await('mh_garage:cb:CanStore', 1000, point.garage, plate, class, properties)
 
                 if not cb then
                     return Edit.Notify(locale(msg), 'warning')

@@ -12,11 +12,18 @@ lib.locale()
 
 
 MySQL.ready(function()
-    local success, result = pcall(MySQL.scalar.await, 'SELECT 1 FROM `uniq_garage`')
+
+    local oldTableExists = pcall(MySQL.scalar.await, 'SELECT 1 FROM `uniq_garage`')
+    if oldTableExists then
+        MySQL.query('RENAME TABLE `uniq_garage` TO `mh_garage`')
+        Wait(200)
+    end
+
+    local success, result = pcall(MySQL.scalar.await, 'SELECT 1 FROM `mh_garage`')
 
     if not success then
         MySQL.query([[
-            CREATE TABLE IF NOT EXISTS `uniq_garage` (
+            CREATE TABLE IF NOT EXISTS `mh_garage` (
             `owner` varchar(60) DEFAULT NULL,
             `name` varchar(100) NOT NULL,
             `data` longtext DEFAULT NULL,
@@ -29,7 +36,7 @@ MySQL.ready(function()
 
     Wait(0)
 
-    result = MySQL.query.await('SELECT * FROM `uniq_garage`')
+    result = MySQL.query.await('SELECT * FROM `mh_garage`')
 
     if result[1] then
         for k,v in pairs(result) do
@@ -45,7 +52,7 @@ MySQL.ready(function()
 end)
 
 
-lib.callback.register('uniq_garage:cb:DoesOwn', function(source, garage)
+lib.callback.register('mh_garage:cb:DoesOwn', function(source, garage)
     local identifier = Framework.GetIdentifier(source)
 
     if not Garages[identifier] then
@@ -56,7 +63,7 @@ lib.callback.register('uniq_garage:cb:DoesOwn', function(source, garage)
 end)
 
 
-RegisterNetEvent('uniq_garage:server:BuyGarage', function(garage, interior)
+RegisterNetEvent('mh_garage:server:BuyGarage', function(garage, interior)
     local src = source
     local price = GaragesData[garage].price
     local identifier = Framework.GetIdentifier(src)
@@ -74,15 +81,15 @@ RegisterNetEvent('uniq_garage:server:BuyGarage', function(garage, interior)
         Garages[identifier][garage].style = Interior[interior].Customization and Interior[interior].Customization.Default or {}
         Garages[identifier][garage].slot = {}
 
-        MySQL.insert('INSERT INTO `uniq_garage` (owner, name, data) VALUES (?, ?, ?)', { identifier, garage, json.encode(Garages[identifier][garage]) })
+        MySQL.insert('INSERT INTO `mh_garage` (owner, name, data) VALUES (?, ?, ?)', { identifier, garage, json.encode(Garages[identifier][garage]) })
 
-        TriggerClientEvent('uniq_garage:Notify', src, locale('bought_garage', garage), 'success')
+        TriggerClientEvent('mh_garage:Notify', src, locale('bought_garage', garage), 'success')
     else
-        TriggerClientEvent('uniq_garage:Notify', src, locale('no_money'), 'error')
+        TriggerClientEvent('mh_garage:Notify', src, locale('no_money'), 'error')
     end
 end)
 
-lib.callback.register('uniq_garage:cb:BuyCustomization', function(source, data)
+lib.callback.register('mh_garage:cb:BuyCustomization', function(source, data)
     local identifier = Framework.GetIdentifier(source)
     local playerGarage = Garages[identifier] and Garages[identifier][data.garage]
 
@@ -93,11 +100,11 @@ lib.callback.register('uniq_garage:cb:BuyCustomization', function(source, data)
     for _, style in ipairs(floorStyles) do
         if data.interior.color then
             if style.name == data.interior.name and tonumber(style.color) == tonumber(data.color) then
-                TriggerClientEvent('uniq_garage:Notify', source, locale('have_customization'), 'error')
+                TriggerClientEvent('mh_garage:Notify', source, locale('have_customization'), 'error')
                 return false
             end
         elseif style.name == data.interior.name then
-            TriggerClientEvent('uniq_garage:Notify', source, locale('have_customization'), 'error')
+            TriggerClientEvent('mh_garage:Notify', source, locale('have_customization'), 'error')
             return false
         end
     end
@@ -137,7 +144,7 @@ lib.callback.register('uniq_garage:cb:BuyCustomization', function(source, data)
 
         return true
     else
-        TriggerClientEvent('uniq_garage:Notify', source, locale('no_money'), 'error')
+        TriggerClientEvent('mh_garage:Notify', source, locale('no_money'), 'error')
     end
 
     return false
@@ -187,7 +194,7 @@ local function FindSlotByPlate(name, identifier, plate)
 end
 
 
-lib.callback.register('uniq_garage:cb:CheckSpawnPoint', function(source, name, plate)
+lib.callback.register('mh_garage:cb:CheckSpawnPoint', function(source, name, plate)
     if #lib.getNearbyVehicles(GaragesData[name].vehicleSpawnPoint.xyz, 3.0, false) > 0 then
         return false
     end
@@ -196,7 +203,7 @@ lib.callback.register('uniq_garage:cb:CheckSpawnPoint', function(source, name, p
 end)
 
 
-RegisterNetEvent('uniq_garage:server:TakeVehicleOut', function(name, plate)
+RegisterNetEvent('mh_garage:server:TakeVehicleOut', function(name, plate)
     plate = string.strtrim(plate)
     local src = source
     local identifier = Framework.GetIdentifier(src)
@@ -208,7 +215,7 @@ RegisterNetEvent('uniq_garage:server:TakeVehicleOut', function(name, plate)
         SetPlayerRoutingBucket(src, 0)
         Framework.ClearMeta(src, 'garage', nil)
 
-        TriggerClientEvent('uniq_garage:client:TakeVehicleOut', src, name, PlayerVehicles[identifier][name][plate])
+        TriggerClientEvent('mh_garage:client:TakeVehicleOut', src, name, PlayerVehicles[identifier][name][plate])
 
         Garages[identifier][name].slot[floor][slot] = nil
         PlayerVehicles[identifier][name][plate] = nil
@@ -216,20 +223,20 @@ RegisterNetEvent('uniq_garage:server:TakeVehicleOut', function(name, plate)
     end
 end)
 
-lib.callback.register('uniq_garage:cb:HasMoney', function(source, class)
+lib.callback.register('mh_garage:cb:HasMoney', function(source, class)
     local price = ClassList[class] or 100
 
     return utils.PayPrice(source, price)
 end)
 
 
-RegisterNetEvent('uniq_garage:server:UpdateBucket', function()
+RegisterNetEvent('mh_garage:server:UpdateBucket', function()
     local src = source
     SetPlayerRoutingBucket(src, src)
 end)
 
 
-lib.callback.register('uniq_garage:cb:CanStore', function(source, garage, plate, class, properties)
+lib.callback.register('mh_garage:cb:CanStore', function(source, garage, plate, class, properties)
     if GaragesData[garage] then
         local identifier = Framework.GetIdentifier(source)
         plate = string.strtrim(plate)
@@ -267,7 +274,7 @@ lib.callback.register('uniq_garage:cb:CanStore', function(source, garage, plate,
 end)
 
 
-lib.callback.register('uniq_garage:cb:GetImpoundList', function(source, index)
+lib.callback.register('mh_garage:cb:GetImpoundList', function(source, index)
     local identifier = Framework.GetIdentifier(source)
     local vehicles = db.GetImpoundList(index, identifier)
 
@@ -275,14 +282,14 @@ lib.callback.register('uniq_garage:cb:GetImpoundList', function(source, index)
 end)
 
 
-lib.callback.register('uniq_garage:cb:GetStyle', function(source, garage, floor)
+lib.callback.register('mh_garage:cb:GetStyle', function(source, garage, floor)
     local identifier = Framework.GetIdentifier(source)
 
     return Garages[identifier][garage].style?[floor] or {}
 end)
 
 
-lib.callback.register('uniq_garage:cb:GetGarageVehicles', function(source, garage, floor)
+lib.callback.register('mh_garage:cb:GetGarageVehicles', function(source, garage, floor)
     local identifier = Framework.GetIdentifier(source)
 
     if Garages[identifier][garage] then
@@ -305,7 +312,7 @@ lib.callback.register('uniq_garage:cb:GetGarageVehicles', function(source, garag
 end)
 
 
-RegisterNetEvent('uniq_garage:server:EnterGarage', function(garage, floor, inPreview)
+RegisterNetEvent('mh_garage:server:EnterGarage', function(garage, floor, inPreview)
     local playerId = source
 
     SetPlayerRoutingBucket(playerId, playerId)
@@ -313,14 +320,14 @@ RegisterNetEvent('uniq_garage:server:EnterGarage', function(garage, floor, inPre
 end)
 
 
-RegisterNetEvent('uniq_garage:server:ExitGarage', function(garage)
+RegisterNetEvent('mh_garage:server:ExitGarage', function(garage)
     local playerId = source
 
     SetPlayerRoutingBucket(playerId, 0)
     Framework.ClearMeta(playerId, 'garage', nil)
 end)
 
-RegisterNetEvent('uniq_garage:server:Orphan', function(id)
+RegisterNetEvent('mh_garage:server:Orphan', function(id)
     local ent = NetworkGetEntityFromNetworkId(id)
 
     SetEntityOrphanMode(ent, 2)
@@ -329,7 +336,7 @@ end)
 
 local function saveToDB()
     local insertTable = {}
-    local query = 'UPDATE `uniq_garage` SET `data` = ? WHERE `owner` = ? AND `name` = ?'
+    local query = 'UPDATE `mh_garage` SET `data` = ? WHERE `owner` = ? AND `name` = ?'
 
     for owner, garages in pairs(Garages) do
         for name, garageData in pairs(garages) do
@@ -360,29 +367,29 @@ if Commands.invite.enable then
         help = Commands.invite.help,
         restricted = false
     }, function(source, args, raw)
-        local data = lib.callback.await('uniq_garage:cb:GetGarageClient', source)
+        local data = lib.callback.await('mh_garage:cb:GetGarageClient', source)
 
         if not data.garage or not data.floor then
-            TriggerClientEvent('uniq_garage:Notify', source, locale('only_in_garage'), 'error')
+            TriggerClientEvent('mh_garage:Notify', source, locale('only_in_garage'), 'error')
             return
         end
 
         if data.preview then
-            TriggerClientEvent('uniq_garage:Notify', source, locale('not_in_preview'), 'error')
+            TriggerClientEvent('mh_garage:Notify', source, locale('not_in_preview'), 'error')
             return
         end
 
         local identifier = Framework.GetIdentifier(source)
 
         if not Garages[identifier][data.garage] then
-            TriggerClientEvent('uniq_garage:Notify', source, locale('not_your_garage'), 'error')
+            TriggerClientEvent('mh_garage:Notify', source, locale('not_your_garage'), 'error')
             return
         end
 
         local players = lib.getNearbyPlayers(GaragesData[data.garage].enter, 10.0, false)
 
         if #players == 0 then
-            TriggerClientEvent('uniq_garage:Notify', source, locale('no_player_nearby'), 'error')
+            TriggerClientEvent('mh_garage:Notify', source, locale('no_player_nearby'), 'error')
             return
         end
 
@@ -392,26 +399,26 @@ if Commands.invite.enable then
             options[i] = { label = Framework.GetName(players[i].id), value = players[i].id }
         end
 
-        TriggerClientEvent('uniq_garage:client:InvitePlayer', source, options, data)
+        TriggerClientEvent('mh_garage:client:InvitePlayer', source, options, data)
     end)
 end
 
-RegisterNetEvent('uniq_garage:server:InvitePlayer', function(target, data)
+RegisterNetEvent('mh_garage:server:InvitePlayer', function(target, data)
     local src = source
     local inviter = Framework.GetName(src)
     local identifier = Framework.GetIdentifier(src)
-    local cb = lib.callback.await('uniq_garage:cb:SendInvite', target, inviter)
+    local cb = lib.callback.await('mh_garage:cb:SendInvite', target, inviter)
 
     if cb == 'cancel' then
-        TriggerClientEvent('uniq_garage:Notify', src, locale('declined_invite'), 'info')
+        TriggerClientEvent('mh_garage:Notify', src, locale('declined_invite'), 'info')
         return
     end
 
     SetPlayerRoutingBucket(target, src)
-    TriggerClientEvent('uniq_garage:client:TeleportPlayer', target, Garages[identifier][data.garage].style?[data.floor] or {}, data)
+    TriggerClientEvent('mh_garage:client:TeleportPlayer', target, Garages[identifier][data.garage].style?[data.floor] or {}, data)
 end)
 
-RegisterNetEvent('uniq_garage:server:TeleportOut', function(name)
+RegisterNetEvent('mh_garage:server:TeleportOut', function(name)
     local src = source
     local ped = GetPlayerPed(src)
     local coords = GaragesData[name].enter

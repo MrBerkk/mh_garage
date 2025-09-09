@@ -34,6 +34,6 @@ function Edit.OnExitGarage()
 end
 
 
-RegisterNetEvent('uniq_garage:Notify', Edit.Notify)
+RegisterNetEvent('mh_garage:Notify', Edit.Notify)
 
 return Edit

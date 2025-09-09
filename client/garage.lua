@@ -47,7 +47,7 @@ function Garage.DeleteVehicles()
 end
 
 function Garage.CreateOwnedVehicles(name, interior)
-    local vehicles, slots = lib.callback.await('uniq_garage:cb:GetGarageVehicles', 1000, name, CurrentFloor)
+    local vehicles, slots = lib.callback.await('mh_garage:cb:GetGarageVehicles', 1000, name, CurrentFloor)
 
     if not vehicles or not slots then return end
 
@@ -113,9 +113,9 @@ function Garage.OpenGarageMenu(name, interior)
     if not GaragesData[name] then return end
     if not Interior[interior] then return end
 
-    local doesOwn = lib.callback.await('uniq_garage:cb:DoesOwn', false, name)
+    local doesOwn = lib.callback.await('mh_garage:cb:DoesOwn', false, name)
     local menu = {
-        id = 'uniq_garage:main',
+        id = 'mh_garage:main',
         title = name,
         options = doesOwn and {
             { title = locale("enter_garage_menu"), arrow = true, onSelect = function() Garage.EnterGarage(name, interior) end },
@@ -128,7 +128,7 @@ function Garage.OpenGarageMenu(name, interior)
                 arrow = true,
                 metadata = { GaragesData[name].GarageInfo },
                 onSelect = function()
-                    TriggerServerEvent('uniq_garage:server:BuyGarage', name, interior)
+                    TriggerServerEvent('mh_garage:server:BuyGarage', name, interior)
                 end
             }
         }
@@ -165,7 +165,7 @@ end
 
 
 function Garage.CreateCustmozations(name, interior)
-    local GarageStyle = lib.callback.await('uniq_garage:cb:GetStyle', 100, name, CurrentFloor)
+    local GarageStyle = lib.callback.await('mh_garage:cb:GetStyle', 100, name, CurrentFloor)
 
     if table.type(GarageStyle) == 'empty' then return end
 
@@ -190,7 +190,7 @@ function Garage.CreateFloor(name, interior)
     if not GaragesData[name] then return end
     if not Interior[interior] then return end
 
-    TriggerServerEvent('uniq_garage:server:EnterGarage', name, CurrentFloor, false)
+    TriggerServerEvent('mh_garage:server:EnterGarage', name, CurrentFloor, false)
 
     DoScreenFadeOut(750)
     AwaitFadeOut()
@@ -254,7 +254,7 @@ function Garage.ExitGarage()
 
         AwaitFadeIn()
         Garage.DeleteVehicles()
-        TriggerServerEvent('uniq_garage:server:ExitGarage')
+        TriggerServerEvent('mh_garage:server:ExitGarage')
 
         if inPreview then
             inPreview = nil
@@ -314,7 +314,7 @@ function Garage.CreateCutomizationMenu(garage, interior)
     end
 
     lib.registerMenu({
-        id = 'uniq_garage:customization',
+        id = 'mh_garage:customization',
         title = locale('customization'),
         position = 'top-right',
         options = options,
@@ -338,7 +338,7 @@ function Garage.CreateCutomizationMenu(garage, interior)
             PreviousSelected = options[1].args.style
 
             lib.registerMenu({
-                id = 'uniq_garage:customization:sub',
+                id = 'mh_garage:customization:sub',
                 title = args.style,
                 position = 'top-right',
                 options = options,
@@ -371,7 +371,7 @@ function Garage.CreateCutomizationMenu(garage, interior)
             }, function (selected2, scrollIndex2, args2, checked2)
                 if inPreview then return end
 
-                local cb = lib.callback.await('uniq_garage:cb:BuyCustomization', 100, {
+                local cb = lib.callback.await('mh_garage:cb:BuyCustomization', 100, {
                     garage = garage,
                     floor = CurrentFloor,
                     interior = args2,
@@ -384,11 +384,11 @@ function Garage.CreateCutomizationMenu(garage, interior)
                 end
             end)
 
-            lib.showMenu('uniq_garage:customization:sub')
+            lib.showMenu('mh_garage:customization:sub')
         end
     end)
 
-    lib.showMenu('uniq_garage:customization')
+    lib.showMenu('mh_garage:customization')
 end
 
 
@@ -448,7 +448,7 @@ function Garage.PreviewGarage(name, interior)
     inPreview = true
     CurrentFloor = 1
     CurrentGarageName = name
-    TriggerServerEvent('uniq_garage:server:EnterGarage', name, CurrentFloor, true)
+    TriggerServerEvent('mh_garage:server:EnterGarage', name, CurrentFloor, true)
 end
 
 function Garage.SetPlayerInGarage(name, floor, inpreview)
@@ -469,7 +469,7 @@ function Garage.SetPlayerInGarage(name, floor, inpreview)
         Garage.CreateFloor(name, GaragesData[name].interior)
     end
 
-    TriggerServerEvent('uniq_garage:server:UpdateBucket')
+    TriggerServerEvent('mh_garage:server:UpdateBucket')
 end
 
 function Garage.SpawnVehicle(mods, coords)
@@ -488,10 +488,10 @@ function Garage.SpawnVehicle(mods, coords)
 	lib.setVehicleProperties(vehicle, mods)
     Edit.SetFuel(vehicle, mods.fuelLevel or 100.0)
     Edit.GiveCarKey(vehicle, mods.plate)
-    TriggerServerEvent('uniq_garage:server:Orphan', VehToNet(vehicle))
+    TriggerServerEvent('mh_garage:server:Orphan', VehToNet(vehicle))
 end
 
-RegisterNetEvent('uniq_garage:client:TakeVehicleOut', function(name, mods)
+RegisterNetEvent('mh_garage:client:TakeVehicleOut', function(name, mods)
     if source == '' then return end
 
     lib.requestModel(mods.model)
@@ -520,14 +520,14 @@ local keybind = lib.addKeybind({
     defaultKey = 'E',
     onReleased = function(self)
         local plate = GetVehicleNumberPlateText(cache.vehicle)
-        local freespot = lib.callback.await('uniq_garage:cb:CheckSpawnPoint', 100, CurrentGarageName)
+        local freespot = lib.callback.await('mh_garage:cb:CheckSpawnPoint', 100, CurrentGarageName)
 
         if not freespot then
             return Edit.Notify(locale('no_free_spawnpoint'), 'error')
         end
 
         Garage.DeleteVehicles()
-        TriggerServerEvent('uniq_garage:server:TakeVehicleOut', CurrentGarageName, plate)
+        TriggerServerEvent('mh_garage:server:TakeVehicleOut', CurrentGarageName, plate)
         CurrentFloor = 'exit'
         lib.hideTextUI()
         self:disable(true)
@@ -546,20 +546,20 @@ lib.onCache('vehicle', function(value)
 end)
 
 
-lib.callback.register('uniq_garage:cb:GetGarageClient', function()
+lib.callback.register('mh_garage:cb:GetGarageClient', function()
     return { garage = CurrentGarageName, floor = CurrentFloor, preview = inPreview }
 end)
 
-RegisterNetEvent('uniq_garage:client:InvitePlayer', function(players, data)
+RegisterNetEvent('mh_garage:client:InvitePlayer', function(players, data)
     if source == '' then return end
 
     local input = lib.inputDialog('', {{ type = 'select', label = locale('select_player'), options = players, required = true }})
     if not input then return end
 
-    TriggerServerEvent('uniq_garage:server:InvitePlayer', input[1], data)
+    TriggerServerEvent('mh_garage:server:InvitePlayer', input[1], data)
 end)
 
-lib.callback.register('uniq_garage:cb:SendInvite', function(name)
+lib.callback.register('mh_garage:cb:SendInvite', function(name)
     return lib.alertDialog({
         header = locale('invite_title'),
         content = locale('invite_msg', name),
@@ -572,7 +572,7 @@ lib.callback.register('uniq_garage:cb:SendInvite', function(name)
     })
 end)
 
-RegisterNetEvent('uniq_garage:client:TeleportPlayer', function(GarageStyle, data)
+RegisterNetEvent('mh_garage:client:TeleportPlayer', function(GarageStyle, data)
     if source == '' then return end
 
     DoScreenFadeOut(750)
@@ -622,7 +622,7 @@ end)
 AddEventHandler('onResourceStop', function(resource)
     if resource == cache.resource then
         if CurrentGarageName and InvitedPlayer then
-            TriggerServerEvent('uniq_garage:server:TeleportOut', CurrentGarageName)
+            TriggerServerEvent('mh_garage:server:TeleportOut', CurrentGarageName)
         end
 
         if inPreview and CurrentGarageName then

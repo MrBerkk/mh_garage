@@ -33,14 +33,14 @@ end
 
 
 function Impound.CreateImpoundList(index)
-    local vehicles = lib.callback.await('uniq_garage:cb:GetImpoundList', 100, index)
+    local vehicles = lib.callback.await('mh_garage:cb:GetImpoundList', 100, index)
 
     if not vehicles then
         return Edit.Notify(locale('impound_empty'))
     end
 
     local menu = {
-        id = 'uniq_garage:impound',
+        id = 'mh_garage:impound',
         title = locale('impound_title'),
         position = 'top-right',
         onSelected = function(selected, secondary, args)
@@ -85,7 +85,7 @@ function Impound.CreateImpoundList(index)
             DeleteEntity(LastVehicle)
             LastVehicle = nil
 
-            local cb = lib.callback.await('uniq_garage:cb:HasMoney', 100, GetVehicleClass(vehicles[args.plate]))
+            local cb = lib.callback.await('mh_garage:cb:HasMoney', 100, GetVehicleClass(vehicles[args.plate]))
 
             if not cb then
                 Edit.Notify(locale('no_money'), 'error')
