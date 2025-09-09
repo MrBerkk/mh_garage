@@ -24,10 +24,10 @@ MySQL.ready(function()
     if not success then
         MySQL.query([[
             CREATE TABLE IF NOT EXISTS `mh_garage` (
-            `owner` varchar(60) DEFAULT NULL,
-            `name` varchar(100) NOT NULL,
-            `data` longtext DEFAULT NULL,
-            UNIQUE KEY `owner` (`owner`,`name`)
+                `owner` varchar(60) DEFAULT NULL,
+                `name` varchar(100) NOT NULL,
+                `data` longtext DEFAULT NULL,
+                UNIQUE KEY `owner` (`owner`,`name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
         ]])
 
@@ -451,4 +451,4 @@ AddEventHandler('playerDropped', function()
 	end
 end)
 
-lib.versionCheck('uniqscripts/uniq_garage')
+lib.versionCheck('mod-haven/mh_garage')
