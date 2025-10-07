@@ -73,6 +73,9 @@ end
 
 function CreateGarages()
     for k, v in pairs(GaragesData) do
+
+        local owns = lib.callback.await('mh_garage:cb:OwnsGarage', 1000, k)
+        local isOwned = (owns ~= nil and type(owns) == 'table') or owns == true
         local enter = lib.points.new({
             coords = v.enter,
             distance = 30.0,
@@ -110,7 +113,12 @@ function CreateGarages()
         SetBlipSprite(blip, v.blip.id)
         SetBlipDisplay(blip, 4)
         SetBlipScale(blip, v.blip.scale)
-        SetBlipColour(blip, v.blip.colour)
+        if isOwned then
+            SetBlipColour(blip, 2)
+        else
+            SetBlipColour(blip, v.blip.colour)
+        end
+        -- SetBlipColour(blip, v.blip.colour)
         SetBlipAsShortRange(blip, true)
         BeginTextCommandSetBlipName("STRING")
         AddTextComponentString(k)
